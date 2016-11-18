@@ -4,7 +4,9 @@ from Tkinter import *
 
 ser = Serial(port='COM3', baudrate=9600, timeout=0)
 
-  
+print("I Got to GIT!!!")
+print("How do I commit this shit?")
+
 i = 1000
 
 while(True):
