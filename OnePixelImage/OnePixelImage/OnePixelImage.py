@@ -1,9 +1,11 @@
 from serial import *
 from time import *
-from tkinter import *
+from Tkinter import *
 from math import *
+from __builtin__ import round
 
-ser = Serial(port='COM4', baudrate=9600, timeout=0)
+ser = Serial(port='COM4', baudrate=9600, timeout=10)
+sleep(1)
 
 class GaussLight:
     def __init__(self, canv, sigma):
@@ -69,66 +71,117 @@ class GaussLight:
 def get_signal(ser, number):
     sum = 0
     for i in range(number):
+        ser.write('w')
+        sleep(0.005)
         line = ser.readline()
-        if len(line) != 0:
-            sum += int(line.strip('\0'))
-        else:
-            i-=1
-    return sum/number
+        if not line.strip():
+            i+=1
+            print "LOL"  
+            continue
+        sum += int(line)
+    return float(sum)/number
 
-def scan(ser, canv, number):
-    width = 20
-    height = 20
+def scanBrick(ser, canv, bricksize, number, diod_reaction_time):
+    width = bricksize
+    height = bricksize
     list = []
-    for i in range(38):
+    for i in range(canv.winfo_height()/height + 1):
         list1 = []
-        for j in range(55):
+        for j in range(canv.winfo_width()/width + 1):
             rect = canv.create_rectangle(j*width, i*height, j*width + width, i*height + height, fill="white")
             canv.update()
-            sleep(0.02)
+            sleep(diod_reaction_time)
             signal = get_signal(ser, number)
             canv.delete(rect)
             list1.append(signal)
+            print i, j, signal
         list.append(list1)
+        canv.update()
     return list
 
-def output(canv, list):
-    width = 20
-    height = 20
-    for i in range(38):
-        for j in range(55):
+def outBrick(canv, list, bricksize):
+    width = bricksize
+    height = bricksize
+    for i in range(canv.winfo_height()/height + 1):
+        for j in range(canv.winfo_width()/width + 1):
             n = list[i][j]
-            if n > 99:
-                n = 99
-            col = 'gray' + str(n)
-            canv.create_rectangle(j*width, i*height, j*width + width, i*height + height, fill=col)
-            canv.update()
-            sleep(1000)
+            col = 'gray' + str(int(round(n)))
+            canv.create_rectangle(j*width, i*height, j*width + width, i*height + height, fill=col)         
+    canv.update()
     return 0
-       
 
+def normalizeBrick(list, max_norm, min_norm, dstep):
+    max = 0
+    min = 10000
+    for i in range(len(list)):
+        for j in range(len(list[i])):
+            if list[i][j] > max:
+                max = list[i][j]
+            if list[i][j] < min:
+                min = list[i][j]
+    k = (max_norm - min_norm)/(max - min)
+    b = max_norm - k*max
+    dev = k * dstep
+
+    for i in range(len(list)):
+        for j in range(len(list[i])):
+            list[i][j] = k*list[i][j] + b
+            floatstep = list[i][j] / dev
+            list[i][j] = round(floatstep)* dev
+            if list[i][j] > 100:
+                list[i][j] = 100
+    return list     
+
+def deleteNoize(list, noize):
+    for i in range(len(list)):
+        for j in range(len(list[i])):
+            list[i][j] -= noize
+    return list
+
+def print_list(list):
+    for i in range(len(list)):
+        for j in range(len(list[i])):
+            print round(list[i][j], 1),
+        print '\n'
 root = Tk()
-def callback():
-    b.pack_forget()
-    root.update()
-    ser.write("GO")
-    l = scan(ser, w, 100)
-    output(w, l)
 
-b = Button(root, text="start", command=callback)
-b.pack(anchor=CENTER)
-w = Canvas(root, width=1024, height=768, bg="black")
+def getAlanDev(ser, number):
+    dev = 0
+    x1 = get_signal(ser, 2)
+    for i in range(number):
+        x2 = get_signal(ser, 2)
+        sleep(0.01)
+        dev += (x2 - x1)*(x2 - x1)/2
+        x1 = x2
+    return float(dev)/number
+
+brick = 40
+w1idth = 400
+h1eight = 300
+waitfor = 0
+num = 10
+
+
+
+w = Canvas(root, width=w1idth, height=h1eight, bg="black")
 w.pack()
+w.update()
+sleep(1)
 
 
+list = scanBrick(ser, w, brick, num, waitfor)
 
+
+noize = get_signal(ser, num)
+dev = getAlanDev(ser, num)
+
+list = deleteNoize(list, noize)
+list = normalizeBrick(list, 99, 0, dev)
+
+outBrick(w, list, brick)
+
+sleep(10000)
 
 
 mainloop()
 
-
-#while True:
-#    line = ser.readline()
-#    if not line.strip():
-#        continue
-#    print(line)

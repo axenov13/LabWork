@@ -1,19 +1,16 @@
 from serial import *
 from time import *
-from Tkinter import *
 
-ser = Serial(port='COM3', baudrate=9600, timeout=0)
+ser = Serial(port='COM4', baudrate=9600, timeout=10)
+sleep(2)
 
-print("I Got to GIT!!!")
-print("How do I commit this shit?")
-
-i = 1000
-
-while(True):
-    ser.write(b'start')
-    sleep(0.05)
+while True:
+    ser.write('w')
     line = ser.readline()
-    print(line)
-    i -= 1
-    if (i == 0):
-        i = 1000
+    if not line.strip():
+        continue
+    n = int(line)
+    print(n)
+    if n < 10:
+        print("WOOOW")
+#    sleep(0.01)
