@@ -1,6 +1,6 @@
 from serial import *
 from time import *
-from Tkinter import *
+from tkinter import *
 from math import *
 from __builtin__ import round
 
@@ -94,7 +94,6 @@ def scanBrick(ser, canv, bricksize, number, diod_reaction_time):
             signal = get_signal(ser, number)
             canv.delete(rect)
             list1.append(signal)
-            print i, j, signal
         list.append(list1)
         canv.update()
     return list
@@ -142,8 +141,7 @@ def print_list(list):
     for i in range(len(list)):
         for j in range(len(list[i])):
             print round(list[i][j], 1),
-        print '\n'
-root = Tk()
+        print('\n')
 
 def getAlanDev(ser, number):
     dev = 0
@@ -155,22 +153,19 @@ def getAlanDev(ser, number):
         x1 = x2
     return float(dev)/number
 
+root = Tk()
 brick = 40
 w1idth = 400
 h1eight = 300
 waitfor = 0
 num = 10
 
-
-
 w = Canvas(root, width=w1idth, height=h1eight, bg="black")
 w.pack()
 w.update()
 sleep(1)
 
-
 list = scanBrick(ser, w, brick, num, waitfor)
-
 
 noize = get_signal(ser, num)
 dev = getAlanDev(ser, num)
@@ -184,4 +179,3 @@ sleep(10000)
 
 
 mainloop()
-
