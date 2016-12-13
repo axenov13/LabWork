@@ -32,24 +32,26 @@ class ConvolutionImageMaster:
         self.ser = __serial
         self.canv = __canvas
         self.cmatrix = []
-        self.rmatrix = []
+        self.imatrix = []
+        self.convolution = []
         self.x_blocksize = x_blocksize
         self.y_blocksize = y_blocksize
-        self.cmatrix_image = []
+        self.cmatrix_image = None
         self.cmatrix_type = None
+        self.imatrix_image = None
 
+    def _get_average_in_zone(self, x1, y1, x2, y2):
+        sum = 0
+        for i in range(x1, x2):
+            for j in range(y1, y2):
+                sum += self.cmatrix[i][j]
+        return sum/( (x2-x1)*(y2-y1) )
     def set_x_blocksize(self, size):
         self.x_blocksize=size
         return 0
     def set_y_blocksize(self, size):
         self.y_blocksize=size
         return 0
-    def _get_average_in_zone(self, x1, y1, x2, y2):
-        sum = 0
-        for i in range(x1, x2):
-            for j in range(y1, y2):
-                sum += self.cmatrix[i][j]
-        return sum/( (x2-x1)*(y2-y1)
     def _resized_cmatrix(self):
         new = []
         if self.cmatrix_type == 'block':
@@ -95,17 +97,29 @@ class ConvolutionImageMaster:
         self.cmatrix = matrix
         self.cmatrix_type = 'manual'
         return self.cmatrix
-
-    def find_initial_matrix(self, convolution):
-        initial = []
+    def init_convolution(self, convolution):
+        self.convolution = convolution
+        return self.convolution
+    def init_imatrix(self):
+        self.imatrix = []
+        cmatrix = self._resized_cmatrix()
         return initial
-
+        
     def create_cmatrix_image(self):
         self.cmatrix_image = Image.new("L", (len(self.cmatrix), len(self.cmatrix[0])), "black")
         for i in range(len(self.cmatrix)):
             for j in range(len(self.cmatrix[0])):
                 self.cmatrix_image.putpixel((i, j), int(self.cmatrix[i][j]))
         return self.cmatrix_image
+    def create_imatrix_image(self):
+        self.imatrix_image = Image.new("L", (len(self.imatrix), len(self.imatrix[0])), "black")
+        for i in range(len(self.imatrix)):
+            for j in range(len(self.imatrix[0])):
+                self.imatrix_image.putpixel((i, j), int(self.imatrix[i][j]))
+        return self.imatrix_image
+
+    def get_imatrix_image(self):
+        return self.imatrix_image
     def get_cmatrix_image(self):
         return self.cmatrix_image
     def get_cmatrix_type(self):
@@ -128,27 +142,27 @@ root.update()
 imgCv = canv.create_image( (0,0), image=imgTk)
 canv.update() #putting image on canvas (0, 0) coords
 
-x_blocksize = 1    #setting step
-y_blocksize = 1    #for x and y
-latency = 0.02       #and latency for diod to react
+x_blocksize = 50    #setting step
+y_blocksize = 20    #for x and y
+latency = 0.02      #and latency for diod to react
 
 convolution = []
 m = 0
-for i in range(canv.winfo_height()/y_blocksize + 1):
+for i in range(canv.winfo_width()/x_blocksize + 1):
     convolution.append([])
-    for j in range(canv.winfo_width()/x_blocksize + 1):
+    for j in range(canv.winfo_height()/y_blocksize + 1):
         convolution[i].append(get_signal1(100000000000, 1)) #here is a mistake (signal1 -> signal)
-        canv.move(imgCv, x_blocksize, 0)
+        canv.move(imgCv, 0, y_blocksize)
         canv.update()
         sleep(latency)
-        m=j
-    canv.move(imgCv, -j*x_blocksize, y_blocksize)
+    canv.move(imgCv, x_blocksize, -canv.winfo_height())
     canv.update()
     sleep(latency)
 
 cim.set_x_blocksize(x_blocksize) #this sets up the size of convolution matrix????
-cim.set_y_blocksize(y_blocksize)    
-result = cim.find_initial_matrix(convolution)
+cim.set_y_blocksize(y_blocksize)  
+cim.init_convolution(convolution)  
+result = cim.init_imatrix()
 
 resultIm = create_matrix_image(result)
 resultIm.show()
