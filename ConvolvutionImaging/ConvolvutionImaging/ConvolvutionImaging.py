@@ -103,7 +103,11 @@ class ConvolutionImageMaster:
     def init_imatrix(self):
         self.imatrix = []
         cmatrix = self._resized_cmatrix()
-        return initial
+        cmatr_f = np.fft.fft2(self.cmatrix)
+        convo_f = np.fft(self.convolution)
+        inv_cmatr_f = np.linalg.inv(cmatr_f)
+        self.imatrix = np.fft.ifft2(np.dot(inv_cmatr_f, convo_f))
+        return self.imatrix
         
     def create_cmatrix_image(self):
         self.cmatrix_image = Image.new("L", (len(self.cmatrix), len(self.cmatrix[0])), "black")
