@@ -1,5 +1,5 @@
-from serial import Serial
-from time import sleep
+	from serial import Serial
+import time
 from Tkinter import *
 from math import exp, log
 from __builtin__ import round
@@ -8,14 +8,19 @@ from PIL import ImageTk
 from random import random
 import numpy as np
 
+ser = Serial(port='COM4', baudrate=9600, timeout=10)
+time.sleep(1)
+ser.flush()
+
+
 def get_signal(ser, number):
     sum = 0
     for i in range(number):
         ser.write('w')
-        sleep(0.005)
+        time.sleep(0.005)
         line = ser.readline()
         if not line.strip():
-            i+=1
+            i-=1
             continue
         sum += int(line)
     return float(sum)/number
@@ -28,9 +33,7 @@ def gauss(r, sigma):
 
 class ConvolutionImageMaster:
 
-    def __init__(self, __serial, __canvas, x_blocksize=1, y_blocksize=1):
-        self.ser = __serial
-        self.canv = __canvas
+    def __init__(self, x_blocksize=1, y_blocksize=1):
         self.cmatrix = []
         self.imatrix = []
         self.convolution = []
@@ -42,8 +45,8 @@ class ConvolutionImageMaster:
 
     def _get_average_in_zone(self, x1, y1, x2, y2):
         sum = 0
-        for i in range(x1, x2):
-            for j in range(y1, y2):
+        for i in range(0, x2 -x1):
+            for j in range(0, y2 -y1):
                 sum += self.cmatrix[i][j]
         return sum/( (x2-x1)*(y2-y1) )
     def set_x_blocksize(self, size):
@@ -62,10 +65,17 @@ class ConvolutionImageMaster:
         else:
             for i in range(int(len(self.cmatrix)/self.x_blocksize) + 1):
                 new.append([])
-                for j in range(int(self.cmatrix[0]/self.y_blocksize) + 1):
-                    x = _get_average_in_zone(self.x_blocksize*i, self.y_blocksize*j, self.x_blocksize*(i+1), self.y_blocksize*(j+1))
+                for j in range(int(len(self.cmatrix[0])/self.y_blocksize) + 1):
+                    x = self._get_average_in_zone(self.x_blocksize*i, self.y_blocksize*j, self.x_blocksize*(i+1), self.y_blocksize*(j+1))
                     new[i].append(x)
         return new            
+    def _extand_matrix_to_square(self, matrix, size):
+        while len(matrix) < size:
+            matrix.append([])
+        for i in range(len(matrix)):
+            while len(matrix[i]) < size:
+                matrix[i].append(0)
+        return matrix
 
     def init_gauss_cmatrix(self, sigma1, sigma2='E'):
         self.cmatrix = []
@@ -103,8 +113,10 @@ class ConvolutionImageMaster:
     def init_imatrix(self):
         self.imatrix = []
         cmatrix = self._resized_cmatrix()
-        cmatr_f = np.fft.fft2(self.cmatrix)
-        convo_f = np.fft(self.convolution)
+        self._extand_matrix_to_square(self.convolution, max(len(self.convolution), len(self.convolution[0])))
+        self._extand_matrix_to_square(cmatrix, len(self.convolution))
+        cmatr_f = np.fft.fft2(cmatrix)
+        convo_f = np.fft.fft2(self.convolution)
         inv_cmatr_f = np.linalg.inv(cmatr_f)
         self.imatrix = np.fft.ifft2(np.dot(inv_cmatr_f, convo_f))
         return self.imatrix
@@ -119,7 +131,7 @@ class ConvolutionImageMaster:
         self.imatrix_image = Image.new("L", (len(self.imatrix), len(self.imatrix[0])), "black")
         for i in range(len(self.imatrix)):
             for j in range(len(self.imatrix[0])):
-                self.imatrix_image.putpixel((i, j), int(self.imatrix[i][j]))
+                self.imatrix_image.putpixel(tuple(i, j), int(self.imatrix[i][j]))
         return self.imatrix_image
 
     def get_imatrix_image(self):
@@ -129,46 +141,64 @@ class ConvolutionImageMaster:
     def get_cmatrix_type(self):
         return self.cmatrix_type
 
+class DiodMaster:
+    def __init__(self, canvas_, serial_name='COM4', baudrate1=9600, timeout1=10):
+        self.value = 1
+        self.serial = Serial(port=serial_name, baudrate=baudrate1, timeout=timeout1)
+        time.sleep(1)
+        self.canvas = canvas_
+
+    def go():
+        return 0
+
+
 cim = ConvolutionImageMaster(None, None)
 cim.init_gauss_cmatrix(50)
 cim.create_cmatrix_image()
 
-#ser = Serial(port='COM4', baudrate=9600, timeout=10)
-#sleep(1)
+
 
 root = Tk()
-root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight())) #Run big window
+root.geometry("{0}x{1}+0+0".format(1024, 768)) #Run big window
 
 imgTk = ImageTk.PhotoImage(cim.get_cmatrix_image())
-canv = Canvas(root, width = root.winfo_width(), height = root.winfo_height(), background="black", borderwidth=0)
+canv = Canvas(root, width =1000, height = 750, background="black", borderwidth=0)
 canv.pack(fill = BOTH, expand = 1)
 root.update()
 imgCv = canv.create_image( (0,0), image=imgTk)
 canv.update() #putting image on canvas (0, 0) coords
 
-x_blocksize = 50    #setting step
-y_blocksize = 20    #for x and y
-latency = 0.02      #and latency for diod to react
-
+x_blocksize = 200    #setting step
+y_blocksize = 200    #for x and y
+latency = 0.001      #and latency for diod to react
 convolution = []
 m = 0
+time.clock()
+while(True):
+    if(time.clock() > 3):
+        break
+    time.sleep(0.02)
+    canv.update()
+
 for i in range(canv.winfo_width()/x_blocksize + 1):
     convolution.append([])
     for j in range(canv.winfo_height()/y_blocksize + 1):
-        convolution[i].append(get_signal1(100000000000, 1)) #here is a mistake (signal1 -> signal)
+        convolution[i].append(get_signal(ser, 2))
         canv.move(imgCv, 0, y_blocksize)
         canv.update()
-        sleep(latency)
-    canv.move(imgCv, x_blocksize, -canv.winfo_height())
+        time.sleep(latency)
+    canv.move(imgCv, x_blocksize, -(canv.winfo_height()/y_blocksize + 1)*y_blocksize)
     canv.update()
-    sleep(latency)
+    time.sleep(latency)
+
 
 cim.set_x_blocksize(x_blocksize) #this sets up the size of convolution matrix????
 cim.set_y_blocksize(y_blocksize)  
 cim.init_convolution(convolution)  
 result = cim.init_imatrix()
-
-resultIm = create_matrix_image(result)
+cim.create_imatrix_image()
+resultIm = cim.get_imatrix_image()
 resultIm.show()
+time.sleep(5)
 
 mainloop()
