@@ -1,4 +1,4 @@
-	from serial import Serial
+from serial import Serial
 import time
 from Tkinter import *
 from math import exp, log
@@ -7,10 +7,11 @@ from PIL import Image
 from PIL import ImageTk
 from random import random
 import numpy as np
+import scipy as scp
 
-ser = Serial(port='COM4', baudrate=9600, timeout=10)
-time.sleep(1)
-ser.flush()
+#ser = Serial(port='COM4', baudrate=9600, timeout=10)
+#time.sleep(1)
+#ser.flush()
 
 
 def get_signal(ser, number):
@@ -131,7 +132,7 @@ class ConvolutionImageMaster:
         self.imatrix_image = Image.new("L", (len(self.imatrix), len(self.imatrix[0])), "black")
         for i in range(len(self.imatrix)):
             for j in range(len(self.imatrix[0])):
-                self.imatrix_image.putpixel(tuple(i, j), int(self.imatrix[i][j]))
+                self.imatrix_image.putpixel((i, j), int(self.imatrix[i][j].real))
         return self.imatrix_image
 
     def get_imatrix_image(self):
@@ -155,8 +156,6 @@ class DiodMaster:
 cim = ConvolutionImageMaster(None, None)
 cim.init_gauss_cmatrix(50)
 cim.create_cmatrix_image()
-
-
 
 root = Tk()
 root.geometry("{0}x{1}+0+0".format(1024, 768)) #Run big window
@@ -183,14 +182,13 @@ while(True):
 for i in range(canv.winfo_width()/x_blocksize + 1):
     convolution.append([])
     for j in range(canv.winfo_height()/y_blocksize + 1):
-        convolution[i].append(get_signal(ser, 2))
+        convolution[i].append(get_signal1(0, 0)) #ERRRRORRORORORORRORORORO HERE
         canv.move(imgCv, 0, y_blocksize)
         canv.update()
         time.sleep(latency)
     canv.move(imgCv, x_blocksize, -(canv.winfo_height()/y_blocksize + 1)*y_blocksize)
     canv.update()
     time.sleep(latency)
-
 
 cim.set_x_blocksize(x_blocksize) #this sets up the size of convolution matrix????
 cim.set_y_blocksize(y_blocksize)  
