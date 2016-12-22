@@ -113,13 +113,40 @@ class ConvolutionImageMaster:
         return self.convolution
     def init_imatrix(self):
         self.imatrix = []
-        cmatrix = self._resized_cmatrix()
-        self._extand_matrix_to_square(self.convolution, max(len(self.convolution), len(self.convolution[0])))
-        self._extand_matrix_to_square(cmatrix, len(self.convolution))
-        cmatr_f = np.fft.fft2(cmatrix)
-        convo_f = np.fft.fft2(self.convolution)
-        inv_cmatr_f = np.linalg.inv(cmatr_f)
-        self.imatrix = np.fft.ifft2(np.dot(inv_cmatr_f, convo_f))
+        
+# H COLUMN INIZIALIZATION
+        convcolumn = []
+        for i in range( len(hmatrix) ):
+            for j in range( len(hmatrix[i]) ):
+                convcolumn.append(hmatrix[i][j])
+# END OF H COLUMN INIZIALIZATION
+
+
+##### GMATRIX INIZIALIZATION
+        firstrow = []
+        for j in range( len(cmatrix) ):
+            for i in range( len(cmatrix[j]) ):
+                firstrow.append(cmatrix[j][i])
+            for i in range( len(hmatrix[j])-1 ):
+                   firstrow.append(0)
+        while len(firstrow) < ( len(hmatrix[0]) + len(cmatrix[0]) - 1 )*( len(cmatrix) + len(hmatrix) - 1 ):
+            firstrow.append(0)
+
+        Gmatrix = []
+        Gmatrix.append(list(firstrow))
+        while len(Gmatrix) < len(convcolumn):
+            firstrow.reverse()
+            firstrow.pop(0)
+            firstrow.append(0)
+            firstrow.reverse()
+            Gmatrix.append(list(firstrow))
+#END OF GMATRIX INIZIALIZATION
+
+# SOLVING
+        f = linalg.lstsq(Gmatrix, convcolumn)[0]
+        f = array(f).reshape( ( len(hmatrix) + len(cmatrix) - 1, len(hmatrix[0])+len(cmatrix[0])-1 ) )
+# END
+        self.imatrix = f
         return self.imatrix
         
     def create_cmatrix_image(self):
