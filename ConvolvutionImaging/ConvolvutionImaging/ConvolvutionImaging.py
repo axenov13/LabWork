@@ -113,39 +113,65 @@ class ConvolutionImageMaster:
         return self.convolution
     def init_imatrix(self):
         self.imatrix = []
-        
+        hmatrix = self.convolution
+        cmatrix = self.cmatrix
+
 # H COLUMN INIZIALIZATION
         convcolumn = []
-        for i in range( len(hmatrix) ):
-            for j in range( len(hmatrix[i]) ):
+        for i in xrange( len(hmatrix) ):
+            for j in xrange( len(hmatrix[i]) ):
                 convcolumn.append(hmatrix[i][j])
-# END OF H COLUMN INIZIALIZATION
+            for j in xrange( len(cmatrix[0])-1 ):
+                convcolumn.append(0.)
+        for i in xrange( (len(cmatrix) - 1)*(len(hmatrix[0])+len(cmatrix[0])-1) ):
+            convcolumn.append(0.)
 
+# END OF H COLUMN INIZIALIZATION
 
 ##### GMATRIX INIZIALIZATION
         firstrow = []
-        for j in range( len(cmatrix) ):
-            for i in range( len(cmatrix[j]) ):
+        for j in xrange( len(cmatrix) ):
+            for i in xrange( len(cmatrix[j]) ):
                 firstrow.append(cmatrix[j][i])
-            for i in range( len(hmatrix[j])-1 ):
-                   firstrow.append(0)
-        while len(firstrow) < ( len(hmatrix[0]) + len(cmatrix[0]) - 1 )*( len(cmatrix) + len(hmatrix) - 1 ):
-            firstrow.append(0)
+            for i in xrange( len(hmatrix[0])-1 ):
+                firstrow.append(0.)
+        l = len(firstrow)
+        for j in xrange( len(convcolumn)-l ):
+            firstrow.append(0.)
 
         Gmatrix = []
-        Gmatrix.append(list(firstrow))
-        while len(Gmatrix) < len(convcolumn):
-            firstrow.reverse()
-            firstrow.pop(0)
-            firstrow.append(0)
-            firstrow.reverse()
-            Gmatrix.append(list(firstrow))
+        k = 0
+        for i in xrange( len(hmatrix) ):
+            for j in xrange( len(hmatrix[0]) ):
+                Gmatrix.append(list(firstrow))
+                firstrow.reverse()
+                firstrow.pop(0)
+                firstrow.append(0.)
+                firstrow.reverse()
+                k+=1
+            for j in xrange( len(cmatrix[0])-1 ):
+                firstrow.reverse()
+                firstrow.pop(0)
+                firstrow.append(0.)
+                firstrow.reverse()
+                marker = (len(convcolumn)-1)*[0.]
+                marker.insert(k, 1.)
+                k+=1
+                Gmatrix.append(marker)
+        for i in xrange( (len(cmatrix)-1)*(len(hmatrix[0])+len(cmatrix[0])-1) ):
+            marker = (len(convcolumn)-1)*[0.]
+            marker.insert(k, 1.)
+            k+=1
+            Gmatrix.append(marker)
+
 #END OF GMATRIX INIZIALIZATION
 
 # SOLVING
-        f = linalg.lstsq(Gmatrix, convcolumn)[0]
+        f = linalg.solve(Gmatrix, convcolumn)
         f = array(f).reshape( ( len(hmatrix) + len(cmatrix) - 1, len(hmatrix[0])+len(cmatrix[0])-1 ) )
+
 # END
+
         self.imatrix = f
         return self.imatrix
         
