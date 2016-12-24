@@ -4,13 +4,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>0c751ce7-dbc0-4005-bc04-52cad5ea591a</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
-    <StartupFile>NumbersGenerator.py</StartupFile>
+    <ProjectHome>
+    </ProjectHome>
+    <StartupFile>Square with zeros on the edge of object.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>NumbersGenerator</Name>
+    <Name>Matrix Methods</Name>
     <RootNamespace>NumbersGenerator</RootNamespace>
     <InterpreterId>{9a7a9026-48c1-4688-9d5d-e5699d47d074}</InterpreterId>
     <InterpreterVersion>2.7</InterpreterVersion>
@@ -24,10 +25,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NumbersGenerator.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Numbers" />
+    <Compile Include="SquareMatr.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Square with zeros on the edge of object.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="{9a7a9026-48c1-4688-9d5d-e5699d47d074}\2.7" />
